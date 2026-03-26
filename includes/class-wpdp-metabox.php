@@ -75,9 +75,9 @@ final class WPDP_Metabox {
         add_action('wpdp_daily_acled_update', array($this, 'update_acled_presentations'));
 
         // Schedule the cron job if it's not already scheduled
-        if (!wp_next_scheduled('wpdp_daily_acled_update')) {
-            wp_schedule_event(time(), 'daily', 'wpdp_daily_acled_update');
-        }
+        // if (!wp_next_scheduled('wpdp_daily_acled_update')) {
+        //     wp_schedule_event(time(), 'daily', 'wpdp_daily_acled_update');
+        // }
 
         // Schedule the cron job if it's not already scheduled
         if (!wp_next_scheduled('wpdp_weekly_yearly_data_update')) {

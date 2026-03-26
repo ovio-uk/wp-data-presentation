@@ -50,20 +50,22 @@ final class WPDP_Shortcode {
         if (session_status() == PHP_SESSION_NONE && !headers_sent()) {
             session_start();
         }
-        $selected_country = $this->get_session_value('wpdp_search_location_country');
+        $selected_country = $this->get_session_value( 'wpdp_search_location_country' );
         $number = 0;
-        if(empty($selected_country) && !empty(get_option('wpdp_countries'))){
-            foreach(get_option('wpdp_countries') as $key => $country){
-                $country = str_replace(' ','-',strtolower($country));
-                if(isset($_SESSION['wpdp_session']['wpdp_'.$country]) && !empty($_SESSION['wpdp_session']['wpdp_'.$country]) ){
-                    $number++;
-                    $session_country = explode('__', $_SESSION['wpdp_session']['wpdp_'.$country]);
-                    $selected_country = $session_country[0];
+        if( empty( $selected_country ) && !empty( get_option( 'wpdp_countries' ) ) ){
+            foreach( get_option( 'wpdp_countries' ) as $key => $country ){
+                if( !empty( $country ) ){
+                    $country = str_replace( ' ', '-', strtolower( $country ) );
+                    if( isset( $_SESSION['wpdp_session']['wpdp_'.$country] ) && !empty( $_SESSION['wpdp_session']['wpdp_'.$country] ) ){
+                        $number++;
+                        $session_country = explode( '__', $_SESSION['wpdp_session']['wpdp_'.$country] );
+                        $selected_country = $session_country[0];
+                    }
                 }
             }
         }else{
-            if(!empty($selected_country)){
-                $selected_country = explode('__', $selected_country);
+            if( !empty( $selected_country ) ){
+                $selected_country = explode( '__', $selected_country );
                 $selected_country = $selected_country[0];
             }
         }

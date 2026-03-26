@@ -2,3 +2,4 @@ vendor/*
 *.csv
 *.xlsx
 *.zip
+.DS_Store
