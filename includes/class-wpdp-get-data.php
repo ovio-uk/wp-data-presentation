@@ -82,15 +82,10 @@ class WPDP_Db_Table {
         }
         $this->delimiter = $this->detect_delimiter($this->csv_file_path);
 
-        // Check if the table has any data
-        $table_name = $this->table_name;
-        $check_query = "SELECT COUNT(*) FROM {$table_name}";
-        $table_has_data = $wpdb->get_var($check_query);
-
-        if ($table_has_data > 0) {
-            // Create a temporary table for the new data
-            $table_name = $this->table_name . '_temp';
-            $this->create_temp_table($table_name);
+        // Always import into a temp table first so bad rows never touch the main table.
+        $table_name = $this->table_name . '_temp';
+        if ( ! $this->create_temp_table( $table_name ) ) {
+            return false;
         }
 
         // Live server only
@@ -125,17 +120,43 @@ class WPDP_Db_Table {
         if ( false === $result ) {
             $error_message = 'WPDP Import Error: Failed to import CSV data into table ' . $table_name . ' - ' . $conn->error;
             error_log( $error_message );
-            wpdp_send_error_email( 'CSV Import Failed', 'Failed to import data for presentation ID: ' . $post_id );
+            wpdp_send_error_email( 'CSV Import Failed', 'Failed to import data into temp table: ' . $table_name );
+            $wpdb->query("DROP TABLE IF EXISTS {$table_name}");
             var_dump( 'Error importing CSV data - ' . $conn->error );
             exit;
         }
 
+        $invalid_row = $this->get_first_invalid_row( $table_name );
+        if ( ! empty( $invalid_row ) ) {
+            error_log(
+                sprintf(
+                    'WPDP Import Error: Invalid imported row detected in %s from %s. Sample row: event_id_cnty="%s", event_date="%s", year="%s". Import aborted.',
+                    $table_name,
+                    $this->csv_file_path,
+                    isset( $invalid_row['event_id_cnty'] ) ? $invalid_row['event_id_cnty'] : '',
+                    isset( $invalid_row['event_date'] ) ? $invalid_row['event_date'] : '',
+                    isset( $invalid_row['year'] ) ? $invalid_row['year'] : ''
+                )
+            );
+            $wpdb->query("DROP TABLE IF EXISTS {$table_name}");
+            return false;
+        }
+
+        $table_has_data = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$this->table_name}" );
+
         if($table_has_data > 0){
             // Merge data from temporary table to main table, removing duplicates
             $this->merge_tables($table_name);
-            // Drop the temporary table
-            $wpdb->query("DROP TABLE IF EXISTS {$table_name}");
+        } else {
+            $wpdb->query( "
+                INSERT INTO {$this->table_name}
+                SELECT *
+                FROM {$table_name}
+            " );
         }
+
+        // Drop the temporary table
+        $wpdb->query("DROP TABLE IF EXISTS {$table_name}");
 
         return true;
     }
@@ -347,5 +368,26 @@ class WPDP_Db_Table {
         fclose($handle);
 
         return $column_names;
+    }
+
+    private function get_first_invalid_row( $table_name ) {
+        global $wpdb;
+
+        return $wpdb->get_row(
+            "
+            SELECT event_id_cnty, event_date, year
+            FROM {$table_name}
+            WHERE event_id_cnty IS NULL
+               OR TRIM(event_id_cnty) = ''
+               OR event_id_cnty NOT REGEXP '^[A-Za-z0-9_-]+$'
+               OR event_date IS NULL
+               OR TRIM(event_date) = ''
+               OR event_date NOT REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+               OR year IS NULL
+               OR year = 0
+            LIMIT 1
+            ",
+            ARRAY_A
+        );
     }
 }
