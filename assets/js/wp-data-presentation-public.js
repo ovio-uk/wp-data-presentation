@@ -1842,62 +1842,70 @@
           const titleConfig = options.plugins.title;
           if (!titleConfig || !titleConfig.display) return;
       
-          const { top, left, right } = chartArea;
+          const { left, right } = chartArea;
           const { title } = titleConfig.labels;
-          const isMobile = width <= 768; // Check if we're on mobile
-      
-          // Clear the area where we'll draw the title
-          ctx.save();
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, width, titleConfig.padding.top + (isMobile ? 60 : 40)); // Increased height for mobile
-          ctx.restore();
-      
-          // Draw title and source based on screen size
+          const isMobile = width <= 768;
+          const maxWidth = Math.max(1, right - left - 20);
+
           ctx.save();
           ctx.textBaseline = 'top';
-      
-          if (isMobile) {
-            // Mobile layout - stacked vertically and wrapped text
-            ctx.font = `${title.font.weight} ${title.font.size}px sans-serif`;
-            ctx.fillStyle = title.color;
-            ctx.textAlign = 'center';
 
-            // Word wrap logic for mobile
-            const words = title.text.split(' ');
-            let line = '';
-            let lines = [];
-            const maxWidth = width - 20; // Leave some padding on sides
-
-            for (let word of words) {
-              const testLine = line + (line ? ' ' : '') + word;
-              const metrics = ctx.measureText(testLine);
-              
-              if (metrics.width > maxWidth && line) {
-                lines.push(line);
-                line = word;
-              } else {
-                line = testLine;
-              }
-            }
-            if (line) {
+          ctx.font = `${title.font.weight} ${title.font.size}px sans-serif`;
+          ctx.fillStyle = title.color;
+          const words = title.text.split(/\s+/);
+          const lines = [];
+          let line = '';
+          words.forEach((word) => {
+            const candidate = line ? `${line} ${word}` : word;
+            if (line && ctx.measureText(candidate).width > maxWidth) {
               lines.push(line);
+              line = word;
+            } else {
+              line = candidate;
             }
+          });
+          if (line) lines.push(line);
 
-            // Draw wrapped title lines
-            lines.forEach((line, index) => {
-              ctx.fillText(line, width / 2, titleConfig.padding.top + (index * (title.font.size + 2)));
-            });
+          const centerTitle = isMobile || lines.length > 1;
+          ctx.textAlign = centerTitle ? 'center' : 'left';
+          const titleX = centerTitle ? width / 2 : left;
+          const lineHeight = title.font.size + 6;
+          lines.forEach((titleLine, index) => {
+            ctx.fillText(titleLine, titleX, titleConfig.padding.top + index * lineHeight);
+          });
 
-          } else {
-            // Desktop layout - draw the title only. The source is shown below the last-updated label.
-            ctx.font = `${title.font.weight} ${title.font.size}px sans-serif`;
-            ctx.fillStyle = title.color;
-            ctx.textAlign = 'left';
-            ctx.fillText(title.text, left, titleConfig.padding.top);
-          }
-          
           ctx.restore();
-        }
+        },
+        beforeLayout: (chart) => {
+          const titleConfig = chart.options.plugins.title;
+          if (!titleConfig || !titleConfig.display) return;
+          const { title } = titleConfig.labels;
+          const width = chart.width;
+          const maxWidth = Math.max(1, width - 40);
+          const ctx = chart.ctx;
+          ctx.save();
+          ctx.font = `${title.font.weight} ${title.font.size}px sans-serif`;
+          let line = '';
+          let lineCount = 0;
+          title.text.split(/\s+/).forEach((word) => {
+            const candidate = line ? `${line} ${word}` : word;
+            if (line && ctx.measureText(candidate).width > maxWidth) {
+              lineCount += 1;
+              line = word;
+            } else {
+              line = candidate;
+            }
+          });
+          if (line) lineCount += 1;
+          ctx.restore();
+
+          if (typeof chart.options.layout.padding === 'number') {
+            chart.options.layout.padding = { top: chart.options.layout.padding };
+          }
+          if (!chart.options.layout.padding) chart.options.layout.padding = {};
+          const requiredTopPadding = titleConfig.padding.top + lineCount * (title.font.size + 6) + 2;
+          chart.options.layout.padding.top = Math.max(chart.options.layout.padding.top || 0, requiredTopPadding);
+        },
       };
 
       // Register the plugin
