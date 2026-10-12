@@ -1843,7 +1843,7 @@
           if (!titleConfig || !titleConfig.display) return;
       
           const { top, left, right } = chartArea;
-          const { title, source } = titleConfig.labels;
+          const { title } = titleConfig.labels;
           const isMobile = width <= 768; // Check if we're on mobile
       
           // Clear the area where we'll draw the title
@@ -1888,22 +1888,12 @@
               ctx.fillText(line, width / 2, titleConfig.padding.top + (index * (title.font.size + 2)));
             });
 
-            // Draw source below title
-            ctx.font = `${source.font.size}px sans-serif`;
-            ctx.fillStyle = source.color;
-            ctx.textAlign = 'center';
-            ctx.fillText(source.text, width / 2, titleConfig.padding.top + (lines.length * (title.font.size + 2)) + 5);
           } else {
-            // Desktop layout - side by side
+            // Desktop layout - draw the title only. The source is shown below the last-updated label.
             ctx.font = `${title.font.weight} ${title.font.size}px sans-serif`;
             ctx.fillStyle = title.color;
             ctx.textAlign = 'left';
             ctx.fillText(title.text, left, titleConfig.padding.top);
-      
-            ctx.font = `${source.font.size}px sans-serif`;
-            ctx.fillStyle = source.color;
-            ctx.textAlign = 'right';
-            ctx.fillText(source.text, right, titleConfig.padding.top);
           }
           
           ctx.restore();

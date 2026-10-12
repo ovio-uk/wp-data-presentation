@@ -761,7 +761,7 @@ final class WPDP_Graphs {
                 <button class="chart-filter-btn third-level">3rd Level</button>
                 <a href="javascript:void(0)" class="chart-filter-btn all-categories ">Toggle All</a>
             </div>
-            <div class="last_updated_chart chart">Last relevant data entry: <span class="last_updated_chart_date"></span> <?php echo $shortcode::info_icon(''); ?></div>
+            <div class="last_updated_chart chart">Last relevant data entry: <span class="last_updated_chart_date"></span> <?php echo $shortcode::info_icon(''); ?><span class="chart_source">Source: ACLED</span></div>
         </div>
 
         <hr>
@@ -774,11 +774,11 @@ final class WPDP_Graphs {
                 <button class="chart-filter-btn third-level">3rd Level</button>
                 <a href="javascript:void(0)" class="chart-filter-btn all-categories ">Toggle All</a>
             </div>
-            <div class="last_updated_chart chart_fat">Last relevant data entry: <span class="last_updated_chart_date"></span> <?php echo $shortcode::info_icon(''); ?></div>
+            <div class="last_updated_chart chart_fat">Last relevant data entry: <span class="last_updated_chart_date"></span> <?php echo $shortcode::info_icon(''); ?><span class="chart_source">Source: ACLED</span></div>
         </div>
         <hr>
         <canvas id="wpdp_chart_bar_chart" style="height:400px" class="table"  ></canvas>
-        <div class="last_updated_chart chart_bar">Last relevant data entry: <span class="last_updated_chart_date"></span> <?php echo $shortcode::info_icon(''); ?></div>
+        <div class="last_updated_chart chart_bar">Last relevant data entry: <span class="last_updated_chart_date"></span> <?php echo $shortcode::info_icon(''); ?><span class="chart_source">Source: ACLED</span></div>
         <p class="chart_bar_note">Types of Actors shown can be aggressors or targets/victims. Civilians are overwhelmingly identified as targets/victims.</p>
 
     </div>

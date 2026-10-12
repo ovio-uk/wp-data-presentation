@@ -483,6 +483,13 @@ a.select_unselect_all {
   margin-top: 3px;
 }
 
+.wpdp .last_updated_chart .chart_source {
+  display: block;
+  color: #666666;
+  font-size: 11px;
+  text-align: right;
+}
+
 .wpdp .last_updated_chart{
   float: right;
   margin-top: -15px;
