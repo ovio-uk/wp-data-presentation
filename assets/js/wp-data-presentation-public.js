@@ -41,6 +41,23 @@
       self.checkfForIndeterminate();
       self.select2();
       self.tippy();
+      self.captureInitialFilters();
+    },
+
+    self.captureInitialFilters = function(){
+      var $form = $('#filter_form');
+      self.initialFilters = {
+        locations: $form.find('.checkboxes_locations').contents().clone(true, true),
+        controls: $form.find('input, select').map(function(){
+          var $control = $(this);
+          return {
+            type: this.type,
+            value: $control.val(),
+            checked: this.checked,
+            options: this.tagName === 'SELECT' ? $control.find('option').clone() : null
+          };
+        }).get()
+      };
     },
 
     self.tippy = function(){
@@ -312,60 +329,39 @@
         $(this).parent().find('li input[type="checkbox"]').prop('checked', this.checked).change();
       });
 
-      // Reset - Updated version
       $('#filter_form').on('reset', function(e) {
-        // Prevent the default reset behavior
         e.preventDefault();
-        
-        // Set default dates based on map existence
-        var maxDate = new Date();
-        var defaultFromDate = new Date();
-        if (typeof google === 'object' && typeof google.maps === 'object') {
-          // If maps exist, set from date to 1 month ago
-          defaultFromDate.setMonth(defaultFromDate.getMonth() - 1);
-        } else {
-          // If no maps, set from date to 1 year ago
-          defaultFromDate.setFullYear(defaultFromDate.getFullYear() - 1);
+        var $form = $(this);
+        $form.find('.checkboxes_locations').empty().append(self.initialFilters.locations.clone(true, true));
+
+        $form.find('input, select').each(function(index) {
+          var initial = self.initialFilters.controls[index];
+          if (!initial) return;
+
+          var $control = $(this);
+          if (this.tagName === 'SELECT') {
+            $control.empty().append(initial.options.clone()).val(initial.value).trigger('change.select2');
+          } else if (initial.type === 'checkbox' || initial.type === 'radio') {
+            $control.prop('checked', initial.checked).prop('indeterminate', false);
+          } else {
+            $control.val(initial.value);
+          }
+        });
+
+        // Saved session locations can already be selected on page load. Reset
+        // should clear those choices as well as locations selected since then.
+        $form.find('.wpdp_location').prop('checked', false).prop('indeterminate', false);
+        $form.find('#wpdp_search_location').val(null).trigger('change.select2');
+        $form.find('input[name="wpdp_search_location_country"]').val('');
+        if ($form.find('input[name="wpdp_search_location_country"]').length) {
+          self.currentMapType = null;
         }
 
-        // Set the datepicker values
-        $('#wpdp_from').datepicker('setDate', defaultFromDate).addClass('changed');
-        $('#wpdp_to').datepicker('setDate', maxDate).addClass('changed');
-
-        // Check all checkboxes 
-        $(this).find('.incident_type input[type="checkbox"],.fatalities input[type="checkbox"],.actors input[type="checkbox"]').prop('checked', true);
-
-        // Reset chart controls to default values which are level 1 and 2
-        if($('.chart-controls').length){
-          $('.chart-controls').each(function(){
-            if(!$(this).find('.chart-filter-btn.top-level').hasClass('active')){
-              $(this).find('.chart-filter-btn.top-level').trigger('click').addClass('active');
-            }
-            if(!$(this).find('.chart-filter-btn.second-level').hasClass('active')){
-              $(this).find('.chart-filter-btn.second-level').trigger('click').addClass('active');
-            }
-            if(!$(this).find('.chart-filter-btn.all-categories').hasClass('active')){
-              $(this).find('.chart-filter-btn.all-categories').trigger('click');
-            }
-          });
-        }
-        
-        // Clear select2 fields
-        $('#wpdp_search_location').val('').trigger('change');
-        $('#wpdp_search_actors').val('').trigger('change');
-        
-        // Clear regular select fields
-        $(this).find('select').val('').trigger('change');
-        
-        // Hide no data message
-        $('.filter_data .no_data').hide();
-
-        
-        // Force recheck indeterminate states
+        // Reset dates must also be saved, even when they were unchanged on page load.
+        $form.find('#wpdp_from, #wpdp_to').addClass('changed');
+        $form.find('.no_data').hide();
         self.checkfForIndeterminate();
-
-        // Trigger form change to update any dependent elements
-        $(this).trigger('change');
+        $form.trigger('submit');
       });
 
       // Select/Unselect All
